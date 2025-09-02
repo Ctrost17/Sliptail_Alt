@@ -1,3 +1,5 @@
+import axios, { type AxiosError } from "axios";
+
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
 
@@ -51,20 +53,13 @@ export async function fetchApi<T>(
 // ------------------------------------------------------------------
 // Axios instance (Axios v1+ compatible typings)
 // ------------------------------------------------------------------
-import axios from "axios";
-import type  { AxiosRequestConfig, AxiosError } from "axios";
-
-// If your backend mounts all routes under /api, include it here:
-const AXIOS_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
-
 export const api = axios.create({
-  baseURL: AXIOS_BASE,
+  baseURL: API_BASE,
   withCredentials: false, // set true if you later use httpOnly cookies/sessions
 });
 
 // Attach Authorization header from localStorage token (client only)
-api.interceptors.request.use((config: AxiosRequestConfig) => {
+api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("token");
     if (token) {
