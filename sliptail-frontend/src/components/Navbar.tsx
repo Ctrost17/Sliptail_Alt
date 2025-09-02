@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+
 import { usePathname } from "next/navigation";
 
 
@@ -19,7 +20,7 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-3">
-            <Image src="/sliptail-logo.svg" alt="Sliptail" width={130} height={40} />
+            <Image src="/sliptail-logofull.png" alt="Sliptail" width={130} height={40} />
           </Link>
         </div>
         <nav className="hidden gap-6 md:flex">

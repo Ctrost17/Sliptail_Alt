@@ -27,7 +27,7 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-r from-green-400 to-green-600 text-white">
         <div className="mx-auto max-w-6xl px-6 py-24 text-center">
           <div className="mx-auto mb-6 w-40 animate-fade-in-up">
-            <Image src="/sliptail-logo.svg" alt="Sliptail" width={160} height={50} />
+            <Image src="/sliptail-logo.png" alt="Sliptail" width={160} height={50} />
           </div>
           <h1 className="mb-4 text-5xl font-bold animate-fade-in-up [animation-delay:200ms]">Support and Create</h1>
           <p className="mx-auto mb-8 max-w-2xl text-lg animate-fade-in-up [animation-delay:400ms]">
