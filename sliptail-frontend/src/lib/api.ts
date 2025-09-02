@@ -1,9 +1,10 @@
+// src/lib/api.ts
+import axios from "axios";
+
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
 
-// ------------------------------------------------------------------
-// Lightweight fetch() helper (works in SSR/Server Components too)
-// ------------------------------------------------------------------
+// ---------- SSR-friendly fetch helper ----------
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export async function fetchApi<T>(
@@ -13,123 +14,66 @@ export async function fetchApi<T>(
     body?: unknown;
     token?: string | null;
     headers?: Record<string, string>;
-    raw?: boolean; // if true, returns the Response (useful for file downloads)
+    raw?: boolean; // if true, returns the Response
   } = {}
-): Promise<T> {
+): Promise<T | Response> {
   const { method = "GET", body, token, headers = {}, raw = false } = options;
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     method,
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": body ? "application/json" : "text/plain",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },
     body: body ? JSON.stringify(body) : undefined,
-    credentials: "include", // harmless now, future-proof if you move to cookies
     cache: "no-store",
   });
 
-  if (raw) return res as unknown as T;
-
-  let data: unknown = null;
-  try {
-    data = await res.json();
-  } catch {
-    // non-JSON responses: keep data = null
-  }
-
+  if (raw) return res;
   if (!res.ok) {
-    const { error, message } = (data ?? {}) as { error?: string; message?: string };
-    const errorMessage = error || message || `Request failed (${res.status})`;
-    throw new Error(errorMessage);
+    let msg = `HTTP ${res.status}`;
+    try {
+      const j = await res.json();
+      if (j?.error) msg = j.error;
+    } catch {}
+    throw new Error(msg);
   }
-
-  return data as T;
+  return (await res.json()) as T;
 }
 
-// ------------------------------------------------------------------
-// Axios instance (Axios v1+ compatible typings)
-// ------------------------------------------------------------------
-import axios from "axios";
-import type  { AxiosRequestConfig, AxiosError } from "axios";
-
-// If your backend mounts all routes under /api, include it here:
-const AXIOS_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:5000";
-
+// ---------- Axios client (for Client Components) ----------
 export const api = axios.create({
-  baseURL: AXIOS_BASE,
-  withCredentials: false, // set true if you later use httpOnly cookies/sessions
+  baseURL: `${API_BASE}/api`,
 });
 
-// Attach Authorization header from localStorage token (client only)
-api.interceptors.request.use((config: AxiosRequestConfig) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // headers can be a plain object or AxiosHeaders — normalize safely
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${token}`,
-      };
-    }
+// Optional: call this after login/logout to keep auth header in sync
+export function setAuthToken(token: string | null) {
+  if (token) {
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common["Authorization"];
   }
-  return config;
-});
+}
 
-// Normalize API errors → always throw Error(message)
-api.interceptors.response.use(
-  (res) => res,
-  (err: AxiosError<{ error?: string; message?: string }>) => {
-    const msg =
-      err.response?.data?.error ||
-      err.response?.data?.message ||
-      err.message ||
-      "Request failed";
-    return Promise.reject(new Error(msg));
-  }
-);
-
-// ------------------------------------------------------------------
-// Small typed helpers that return response.data directly
-// ------------------------------------------------------------------
+// Small helpers if you like Axios ergonomics
 export async function apiGet<T>(url: string, config?: Parameters<typeof api.get>[1]) {
   const res = await api.get<T>(url, config);
   return res.data;
 }
-
-export async function apiPost<T>(
-  url: string,
-  data?: unknown,
-  config?: Parameters<typeof api.post>[2]
-) {
+export async function apiPost<T>(url: string, data?: unknown, config?: Parameters<typeof api.post>[2]) {
   const res = await api.post<T>(url, data, config);
   return res.data;
 }
-
-export async function apiPut<T>(
-  url: string,
-  data?: unknown,
-  config?: Parameters<typeof api.put>[2]
-) {
+export async function apiPut<T>(url: string, data?: unknown, config?: Parameters<typeof api.put>[2]) {
   const res = await api.put<T>(url, data, config);
   return res.data;
 }
-
-export async function apiPatch<T>(
-  url: string,
-  data?: unknown,
-  config?: Parameters<typeof api.patch>[2]
-) {
+export async function apiPatch<T>(url: string, data?: unknown, config?: Parameters<typeof api.patch>[2]) {
   const res = await api.patch<T>(url, data, config);
   return res.data;
 }
-
-export async function apiDelete<T>(
-  url: string,
-  config?: Parameters<typeof api.delete>[1]
-) {
+export async function apiDelete<T>(url: string, config?: Parameters<typeof api.delete>[1]) {
   const res = await api.delete<T>(url, config);
   return res.data;
 }

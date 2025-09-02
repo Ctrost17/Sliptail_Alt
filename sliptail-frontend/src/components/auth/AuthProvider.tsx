@@ -1,9 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { api } from "@/lib/api";
-import { SafeUser } from "@/lib/types";
-import { clearAuth, loadAuth, saveAuth } from "@/lib/auth";
+import { api, setAuthToken } from "@/lib/api";
+import { loadAuth, saveAuth, clearAuth, AuthState, SafeUser } from "@/lib/auth";
 
 type AuthContextType = {
   user: SafeUser | null;
@@ -14,51 +13,59 @@ type AuthContextType = {
   logout: () => void;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [{ token, user }, setAuth] = useState(loadAuth());
-  const [loading, setLoading] = useState(false);
+  const [{ user, token }, setAuth] = useState<AuthState>({ user: null, token: null });
+  const [loading, setLoading] = useState(true);
 
+  // hydrate from localStorage on mount
   useEffect(() => {
-    saveAuth({ token, user });
-  }, [token, user]);
+    const initial = loadAuth();
+    setAuth(initial);
+    setAuthToken(initial.token);
+    setLoading(false);
+  }, []);
 
-  const login = async (email: string, password: string) => {
+  async function login(email: string, password: string) {
     setLoading(true);
     try {
-      const data = await api<{ token: string; user: SafeUser }>(
-        "/api/auth/login",
-        { method: "POST", body: { email, password } }
-      );
-      setAuth({ token: data.token, user: data.user });
+      const { data } = await api.post<{ token: string; user: SafeUser }>("/auth/login", { email, password });
+      const next: AuthState = { token: data.token, user: data.user };
+      setAuth(next);
+      saveAuth(next);
+      setAuthToken(next.token);
+    } catch (e: unknown) {
+      const msg = e?.response?.data?.error || "Login failed";
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const signup = async (email: string, password: string, username?: string): Promise<"verify-sent"> => {
+  async function signup(email: string, password: string, username?: string): Promise<"verify-sent"> {
     setLoading(true);
     try {
-      await api<{ checkEmail: boolean }>("/api/auth/signup", {
-        method: "POST",
-        body: { email, password, username },
-      });
-      return "verify-sent";
+      const { data } = await api.post<{ checkEmail: boolean }>("/auth/signup", { email, password, username });
+      if (data?.checkEmail) {
+        return "verify-sent";
+      }
+      throw new Error("Signup failed");
+    } catch (e: any) {
+      const msg = e?.response?.data?.error || "Signup failed";
+      throw new Error(msg);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const logout = () => {
-    setAuth({ token: null, user: null });
+  function logout() {
     clearAuth();
-  };
+    setAuth({ user: null, token: null });
+    setAuthToken(null);
+  }
 
-  const value = useMemo(
-    () => ({ user, token, loading, login, signup, logout }),
-    [user, token, loading]
-  );
+  const value = useMemo(() => ({ user, token, loading, login, signup, logout }), [user, token, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

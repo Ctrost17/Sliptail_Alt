@@ -21,6 +21,19 @@ function linkify(product) {
   };
 }
 
+function toProductDTO(row) {
+  return {
+    id: String(row.id),
+    creatorId: String(row.user_id),
+    title: row.title,
+    description: row.description ?? null,
+    // ⚠️ If your DB `price` is in DOLLARS, multiply by 100 here.
+    // If it's already in cents, leave as-is.
+    price: typeof row.price === "number" ? row.price : Number(row.price) || 0,
+    productType: row.product_type, // "purchase" | "membership" | "request"
+  };
+}
+
 // 📁 Ensure upload folder exists
 const uploadDir = path.join(__dirname, "..", "public", "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -63,6 +76,26 @@ async function assertOwner(productId, userId) {
 const isVideo = (mimeType) => mimeType.startsWith("video/");
 
 /* -------------------------------- routes -------------------------------- */
+
+// ✅ NEW: GET /api/products  -> list all products
+router.get("/", async (req, res, next) => {
+  try {
+    const result = await db.query(
+      "SELECT id, user_id, title, description, filename, product_type, price FROM products ORDER BY created_at DESC"
+    );
+    const items = result.rows.map(row => ({
+      id: String(row.id),
+      creatorId: String(row.user_id),
+      title: row.title,
+      description: row.description ?? null,
+      price: Number(row.price) ?? 0, // adjust if stored in dollars
+      productType: row.product_type,
+    }));
+    res.json(items);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // 📤 Upload + create product (CREATOR ONLY) — uses JWT user id
 router.post(
