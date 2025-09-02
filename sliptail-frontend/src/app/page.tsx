@@ -21,8 +21,12 @@ const categories = ["art", "photography", "music", "fashion"];
 export default function Home() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
+      <section className="mb-12 text-center">
+        <h1 className="text-4xl font-bold">Support and Connect with your favorite creators</h1>
+      </section>
+
       <section className="mb-12">
-        <h1 className="mb-4 text-3xl font-bold">Featured Sellers</h1>
+        <h2 className="mb-4 text-3xl font-bold">Featured Creators</h2>
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
           {featured.map((c) => (
             <CreatorCard key={c.id} creator={c} />
