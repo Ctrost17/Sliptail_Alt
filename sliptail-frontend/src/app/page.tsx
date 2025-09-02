@@ -22,7 +22,7 @@ export default function Home() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
       <section className="mb-12">
-        <h1 className="mb-4 text-3xl font-bold">Featured Creators</h1>
+        <h1 className="mb-4 text-3xl font-bold">Featured Sellers</h1>
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
           {featured.map((c) => (
             <CreatorCard key={c.id} creator={c} />
