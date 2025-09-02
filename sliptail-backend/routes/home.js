@@ -83,8 +83,8 @@ router.get("/featured", async (req, res) => {
 
     res.json({ featured: out });
   } catch (e) {
-    console.error("featured sellers error:", e);
-    res.status(500).json({ error: "Failed to fetch featured sellers" });
+    console.error("featured creators error:", e);
+    res.status(500).json({ error: "Failed to fetch featured creators" });
   }
 });
 

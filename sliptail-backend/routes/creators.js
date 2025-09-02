@@ -127,7 +127,7 @@ router.get("/:creatorId/categories", async (req, res) => {
 });
 
 /**
- * ADMIN: Set/unset featured seller
+ * ADMIN: Set/unset featured creator
  * Body: { featured: true|false }
  */
 router.patch("/:creatorId/featured", requireAuth, requireAdmin, async (req, res) => {
@@ -166,7 +166,7 @@ router.patch("/:creatorId/featured", requireAuth, requireAdmin, async (req, res)
 /**
  * PUBLIC: Seller cards feed (front/back)
  * GET /api/home/cards?featured=true|false&category=<slug or id>&search=<text>&limit=12
- * - featured=true → only featured sellers
+ * - featured=true → only featured creators
  * - category=slug or category=id → filter by category
  * - search on display_name or bio
  */
